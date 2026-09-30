@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"   # RabbitMQ AMQP protocol port
+      - "15672:15672" # Management Web UI dashboard
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+    # The Data Lake: Simulates AWS S3 locally for storing raw and processed assets
+  minio:
+    # Updated to the official upstream mirror on Quay
+    image: quay.io/minio/minio:RELEASE.2026-09-08T18-12-33Z
+    container_name: pipeline_storage
+    ports:
+      - "9000:9000"   # Core S3 API network port
+      - "9001:9001"   # Web Console port (Open http://localhost:9001 in your browser)
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+
