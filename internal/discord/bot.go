@@ -3,12 +3,14 @@ package discord
 import (
 	"fmt"
 	"log"
+	"video-pipeline/internal/queue"
 
 	"github.com/bwmarrin/discordgo"
 )
 
 type Bot struct {
-	session *discordgo.Session
+	session   *discordgo.Session
+	publisher queue.Publisher
 }
 
 // NewBot acts as a constructor, configuring the isolated session state
