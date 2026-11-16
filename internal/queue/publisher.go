@@ -2,6 +2,7 @@ package queue
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 
@@ -42,5 +43,18 @@ func NewPublisher(ctx context.Context, amqpURL string) (*Publisher, error) {
 }
 
 func (pub *Publisher) PublishVideoJob(ctx context.Context, job VideoJob) error {
-	
+	// TODO: Marshal the VideoJob into a JSON to make it AMQP compatible, then submit to queue
+	json, err := json.Marshal(job)
+	if err != nil {
+		return fmt.Errorf("failed to marshal VideoJob struct into JSON payload")
+	}
+
+	queueMessage := rmq.NewMessage(json)
+
+	response, err := pub.publisher.Publish(ctx, queueMessage)
+	if err != nil {
+		return fmt.Errorf("failed to publish AMQP job message to AMQP")
+	}
+
+	return nil
 }
