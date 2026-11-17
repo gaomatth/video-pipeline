@@ -51,9 +51,18 @@ func (pub *Publisher) PublishVideoJob(ctx context.Context, job VideoJob) error {
 
 	queueMessage := rmq.NewMessage(videoJobJson)
 
-	response, err := pub.publisher.Publish(ctx, queueMessage)
+	publishResult, err := pub.publisher.Publish(ctx, queueMessage)
 	if err != nil {
 		return fmt.Errorf("failed to publish AMQP job message to AMQP")
+	}
+
+	switch publishResult.Outcome.(type) {
+	case *rmq.StateAccepted:
+		log.Println("[Publisher] AMQP job published successfully")
+	case *rmq.StateRejected:
+		log.Println("[Publisher] AMQP job published rejected")
+	case *rmq.StateReleased:
+		log.Println("[Publisher] AMQP job published successfully")
 	}
 
 	return nil
