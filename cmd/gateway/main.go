@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"video-pipeline/internal/discord"
 	"video-pipeline/internal/queue"
@@ -23,18 +25,24 @@ func main() {
 	}
 
 	log.Println("Initializing distributed pipeline components...")
-
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 	// 2. Initialize Infrastructure Layer First
 	// This ensures our RabbitMQ queues are established before events happen
-	rabbitClient, err := queue.NewRabbitMQClient(rabbitURL, "video-jobs")
+	rabbitClient, err := queue.NewRabbitMQClient(ctx, rabbitURL)
 	if err != nil {
 		log.Fatalf("Failed to initialize RabbitMQ connection client: %v", err)
 	}
-	defer rabbitClient.Close() // Safe network socket cleanup on exit
+	defer func(rabbitClient *queue.Publisher, ctx context.Context) {
+		err := rabbitClient.Close(ctx)
+		if err != nil {
+
+		}
+	}(rabbitClient, ctx) // Safe network socket cleanup on exit
 
 	// 3. Initialize Gateway / Interface Layer
 	// We inject the running rabbitClient straight into the bot configuration constructor
-	bot, err := discord.NewBot(token, rabbitClient)
+	bot, err := discord.NewBot(token)
 	if err != nil {
 		log.Fatalf("Failed to initialize Discord bot controller: %v", err)
 	}
@@ -43,7 +51,12 @@ func main() {
 	if err := bot.Connect(); err != nil {
 		log.Fatalf("Failed to establish Discord gateway connection: %v", err)
 	}
-	defer bot.Close()
+	defer func(bot *discord.Bot) {
+		err := bot.Close()
+		if err != nil {
+			log.Fatalf("Failed to close Discord gateway connection: %v", err)
+		}
+	}(bot)
 
 	log.Println("API Ingestion Gateway is online and listening. Press CTRL+C to exit.")
 

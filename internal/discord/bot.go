@@ -38,7 +38,7 @@ func (b *Bot) Connect() error {
 	return b.session.Open()
 }
 
-// Close gracefully disconnects the WebSocket streamß
+// Close gracefully disconnects the WebSocket stream
 func (b *Bot) Close() error {
 	log.Println("Closing Discord WebSocket session...")
 	return b.session.Close()

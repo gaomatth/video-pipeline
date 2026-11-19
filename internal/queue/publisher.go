@@ -14,7 +14,7 @@ type Publisher struct {
 	publisher *rmq.Publisher // Updated from amqp.AmqpPublisher to the package's Publisher interface
 }
 
-func NewPublisher(ctx context.Context, amqpURL string) (*Publisher, error) {
+func NewRabbitMQClient(ctx context.Context, amqpURL string) (*Publisher, error) {
 	conn, err := rmq.Dial(ctx, amqpURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to RabbitMQ via AMQP 1.0: %w", err)
@@ -65,5 +65,17 @@ func (pub *Publisher) PublishVideoJob(ctx context.Context, job VideoJob) error {
 		log.Println("[Publisher] AMQP job published successfully")
 	}
 
+	return nil
+}
+
+func (pub *Publisher) Close(ctx context.Context) error {
+	err := pub.conn.Close(ctx)
+	if err != nil {
+		return err
+	}
+	err = pub.publisher.Close(ctx)
+	if err != nil {
+		return err
+	}
 	return nil
 }
